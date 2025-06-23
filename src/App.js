@@ -1,6 +1,19 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import styled from "styled-components";
 
+// Function to get scale factor from URL parameter
+const getScaleFactor = () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const scale = urlParams.get("scale");
+  return scale ? parseFloat(scale) : 1;
+};
+
+// Function to apply scale to a value
+const scale = (value) => {
+  const scaleFactor = getScaleFactor();
+  return value * scaleFactor;
+};
+
 // Function to normalize special characters to basic ASCII
 const normalizeText = (text) => {
   return text
@@ -48,14 +61,14 @@ const splitTextIntoLines = (text) => {
   let currentLineText = "";
   const textElement = document.createElement("span");
   textElement.className = "text-measure";
-  textElement.style.fontSize = "7rem";
-  textElement.style.letterSpacing = "-1.25rem";
-  textElement.style.wordSpacing = "-2.5rem";
+  textElement.style.fontSize = `${scale(7)}rem`;
+  textElement.style.letterSpacing = `${scale(-1.25)}rem`;
+  textElement.style.wordSpacing = `${scale(-2.5)}rem`;
   textElement.style.fontFamily = "NYCTA-R46";
   textElement.style.textTransform = "uppercase";
   textElement.style.visibility = "hidden";
   textElement.style.position = "absolute";
-  textElement.style.padding = "0 3rem 3rem 3rem";
+  textElement.style.padding = `0 ${scale(3)}rem ${scale(3)}rem ${scale(3)}rem`;
   document.body.appendChild(textElement);
   const containerWidth =
     document.querySelector(".text-container-for-measure")?.offsetWidth || 0;
@@ -101,6 +114,11 @@ const calculateSlideDuration = (slide) => {
   return Math.max(minDuration, Math.min(maxDuration, baseDuration * 1000));
 };
 
+const Container = styled.div`
+  width: 100vw;
+  height: 100vh;
+`;
+
 const Wall = styled.div`
   display: flex;
   justify-content: center;
@@ -112,34 +130,38 @@ const Wall = styled.div`
 const ScreenContainer = styled.div`
   position: absolute;
   z-index: 0;
-  width: calc(100% - 4rem);
-  height: calc(100% - 4rem);
+  width: calc(100% - ${scale(4)}rem);
+  height: calc(100% - ${scale(4)}rem);
   background: linear-gradient(to bottom, rgb(181, 164, 111), rgb(110, 99, 68));
-  margin: 2rem;
-  border-radius: 8rem;
-  box-shadow: inset 0 -1rem 2rem 0.5rem rgb(255, 248, 218),
-    inset 0 0 1rem 0.5rem rgb(117, 93, 22), inset 0 0 2rem 0.5rem rgb(38, 28, 0),
-    inset 0 2rem 2rem 0.5rem rgb(126, 107, 45),
-    inset 0 -1rem 2rem 0.25rem rgb(229, 224, 195),
-    0 0 4rem 2rem rgb(235, 220, 163);
-  filter: blur(0.75rem);
+  margin: ${scale(2)}rem;
+  border-radius: ${scale(8)}rem;
+  box-shadow: inset 0 ${scale(-1)}rem ${scale(2)}rem ${scale(0.5)}rem
+      rgb(255, 248, 218),
+    inset 0 0 ${scale(1)}rem ${scale(0.5)}rem rgb(117, 93, 22),
+    inset 0 0 ${scale(2)}rem ${scale(0.5)}rem rgb(38, 28, 0),
+    inset 0 ${scale(2)}rem ${scale(2)}rem ${scale(0.5)}rem rgb(126, 107, 45),
+    inset 0 ${scale(-1)}rem ${scale(2)}rem ${scale(0.25)}rem rgb(229, 224, 195),
+    0 0 ${scale(4)}rem ${scale(2)}rem rgb(235, 220, 163);
+  filter: blur(${scale(0.75)}rem);
 `;
 
 const Screen = styled.div`
   position: absolute;
   z-index: 1;
-  width: calc(100% - 9rem - 8rem);
-  height: calc(100% - 9rem - 8rem);
+  width: calc(100% - ${scale(9)}rem - ${scale(8)}rem);
+  height: calc(100% - ${scale(9)}rem - ${scale(8)}rem);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   background-color: #6a6648;
-  border-radius: 5rem;
-  box-shadow: inset 0 2rem 5rem 0.25rem rgba(0, 0, 0, 0.75),
-    inset 0 0 10rem rgba(0, 0, 0, 0.25), 0 0 1rem rgba(0, 0, 0, 0.75);
+  border-radius: ${scale(5)}rem;
+  box-shadow: inset 0 ${scale(2)}rem ${scale(5)}rem ${scale(0.25)}rem
+      rgba(0, 0, 0, 0.75),
+    inset 0 0 ${scale(10)}rem rgba(0, 0, 0, 0.25),
+    0 0 ${scale(1)}rem rgba(0, 0, 0, 0.75);
   overflow: hidden;
-  filter: blur(1px);
-  padding: 4rem;
+  filter: blur(${scale(1)}px);
+  padding: ${scale(4)}rem;
 `;
 
 const TextContainer = styled.div`
@@ -161,12 +183,14 @@ const TextAndMetadata = styled.div`
 
 const TitleWrapper = styled.div`
   overflow: hidden;
-  /* 4 lines max height, calculated from: 4 * 7.25rem (font-size) * 1.5 (line-height) */
-  max-height: 43.5rem;
+  /* 4 lines max height, calculated from: 4 * ${scale(
+    7.25
+  )}rem (font-size) * 1.5 (line-height) */
+  max-height: ${scale(43.5)}rem;
 `;
 
 const LoadingText = styled.div`
-  font-size: 6rem;
+  font-size: ${scale(6)}rem;
   color: rgb(255, 255, 255);
   font-family: "NYCTA-R46";
   text-align: center;
@@ -174,8 +198,8 @@ const LoadingText = styled.div`
   justify-content: center;
   align-items: center;
   height: 100%;
-  padding-left: 1.25rem;
-  margin-top: -1rem;
+  padding-left: ${scale(1.25)}rem;
+  margin-top: ${scale(-1)}rem;
   animation: pulse 2s ease-in-out infinite;
 
   @keyframes pulse {
@@ -192,7 +216,7 @@ const LoadingText = styled.div`
 `;
 
 const ErrorText = styled.div`
-  font-size: 3rem;
+  font-size: ${scale(3)}rem;
   color: rgb(255, 255, 255);
   font-family: "NYCTA-R46";
   text-align: center;
@@ -200,20 +224,20 @@ const ErrorText = styled.div`
   justify-content: center;
   align-items: center;
   height: 100%;
-  padding-left: 1.25rem;
-  margin-top: -1rem;
+  padding-left: ${scale(1.25)}rem;
+  margin-top: ${scale(-1)}rem;
 `;
 
 const Text = styled.div`
   background-color: rgba(255, 255, 0, 1);
   display: inline-block;
-  font-size: 7rem;
-  letter-spacing: -1.25rem;
-  word-spacing: -2.5rem;
+  font-size: ${scale(7)}rem;
+  letter-spacing: ${scale(-1.25)}rem;
+  word-spacing: ${scale(-2.5)}rem;
   color: rgb(49, 44, 4);
   font-family: "NYCTA-R46";
-  padding: 3rem;
-  margin-bottom: -3rem;
+  padding: ${scale(3)}rem;
+  margin-bottom: ${scale(-3)}rem;
 
   &:last-child {
     margin-bottom: 0;
@@ -225,33 +249,33 @@ const Metadata = styled.div`
   justify-content: space-between;
   align-items: center;
   flex-direction: row;
-  padding: 1.5rem 2rem;
+  padding: ${scale(1.5)}rem ${scale(2)}rem;
 `;
 
 const Description = styled.div`
-  font-size: 3rem;
-  letter-spacing: -0.25rem;
+  font-size: ${scale(3)}rem;
+  letter-spacing: ${scale(-0.25)}rem;
   color: rgb(255, 255, 255);
   font-family: "NYCTA-R46";
   mix-blend-mode: overlay;
   display: inline-block;
-  margin-top: 1rem;
+  margin-top: ${scale(1)}rem;
 `;
 
 const ProgressBar = styled.div`
-  width: 24rem;
-  height: 3rem;
+  width: ${scale(24)}rem;
+  height: ${scale(3)}rem;
   background-color: rgba(0, 0, 0, 0.25);
   overflow: hidden;
-  margin-top: 1rem;
+  margin-top: ${scale(1)}rem;
 `;
 
 const ProgressFill = styled.div`
-  height: calc(100% - 1rem);
+  height: calc(100% - ${scale(1)}rem);
   background-color: rgba(255, 255, 255, 0.5);
-  width: calc(${(props) => props.progress}% - 1rem);
+  width: calc(${(props) => props.progress}% - ${scale(1)}rem);
   transition: width 0.1s linear;
-  margin: 0.5rem;
+  margin: ${scale(0.5)}rem;
 `;
 
 function App() {
@@ -347,7 +371,7 @@ function App() {
 
       // Use a CORS proxy to fetch the RSS feed
       const response = await fetch(
-        "https://api.allorigins.win/get?url=" +
+        "https://whateverorigin.org/get?url=" +
           encodeURIComponent(
             "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
           )
@@ -453,15 +477,17 @@ function App() {
 
   if (!currentHeadline) {
     return (
-      <Wall>
-        <Screen>
-          <TextContainer>
-            {loading && <LoadingText>Loading</LoadingText>}
-            {error && <ErrorText>Sorry, something went wrong</ErrorText>}
-          </TextContainer>
-        </Screen>
-        <ScreenContainer />
-      </Wall>
+      <Container>
+        <Wall>
+          <Screen>
+            <TextContainer>
+              {loading && <LoadingText>Loading</LoadingText>}
+              {error && <ErrorText>Sorry, something went wrong</ErrorText>}
+            </TextContainer>
+          </Screen>
+          <ScreenContainer />
+        </Wall>
+      </Container>
     );
   }
 
@@ -470,40 +496,42 @@ function App() {
     slides.length > 1 ? `${currentSlideIndex + 1}/${slides.length}` : null;
 
   return (
-    <Wall>
-      <Screen>
-        <TextContainer
-          ref={textContainerRef}
-          className="text-container-for-measure"
-        >
-          {loading && <LoadingText>Loading</LoadingText>}
-          {error && <ErrorText>{error}</ErrorText>}
-          {refreshing && <LoadingText>Refreshing</LoadingText>}
-          {!loading && !error && !refreshing && currentHeadline && (
-            <TextAndMetadata>
-              <TitleWrapper>
-                {currentSlide.map((line, index) => (
-                  <Text key={index}>{line}</Text>
-                ))}
-              </TitleWrapper>
-              <br />
-              <Metadata>
-                <Description>
-                  {publishedTimeDate}
-                  {slideNumber && ` (${slideNumber})`}
-                </Description>
-                {!loading && !error && headlines.length > 0 && (
-                  <ProgressBar>
-                    <ProgressFill progress={progress} />
-                  </ProgressBar>
-                )}
-              </Metadata>
-            </TextAndMetadata>
-          )}
-        </TextContainer>
-      </Screen>
-      <ScreenContainer></ScreenContainer>
-    </Wall>
+    <Container>
+      <Wall>
+        <Screen>
+          <TextContainer
+            ref={textContainerRef}
+            className="text-container-for-measure"
+          >
+            {loading && <LoadingText>Loading</LoadingText>}
+            {error && <ErrorText>{error}</ErrorText>}
+            {refreshing && <LoadingText>Refreshing</LoadingText>}
+            {!loading && !error && !refreshing && currentHeadline && (
+              <TextAndMetadata>
+                <TitleWrapper>
+                  {currentSlide.map((line, index) => (
+                    <Text key={index}>{line}</Text>
+                  ))}
+                </TitleWrapper>
+                <br />
+                <Metadata>
+                  <Description>
+                    {publishedTimeDate}
+                    {slideNumber && ` (${slideNumber})`}
+                  </Description>
+                  {!loading && !error && headlines.length > 0 && (
+                    <ProgressBar>
+                      <ProgressFill progress={progress} />
+                    </ProgressBar>
+                  )}
+                </Metadata>
+              </TextAndMetadata>
+            )}
+          </TextContainer>
+        </Screen>
+        <ScreenContainer></ScreenContainer>
+      </Wall>
+    </Container>
   );
 }
 
