@@ -40,6 +40,27 @@ const splitTextIntoLines = (text) => {
   return lines;
 };
 
+const splitHeadlineIntoSlides = (lines) => {
+  const slides = [];
+  const linesPerSlide = 4;
+
+  for (let i = 0; i < lines.length; i += linesPerSlide) {
+    slides.push(lines.slice(i, i + linesPerSlide));
+  }
+
+  return slides;
+};
+
+// Calculate timing based on character count
+const calculateSlideDuration = (slide) => {
+  const characterCount = slide.join(" ").length;
+  // Base timing: 0.1 seconds per character, with min 2s and max 8s
+  const baseDuration = characterCount * 0.1;
+  const minDuration = 2000; // 2 seconds
+  const maxDuration = 8000; // 8 seconds
+  return Math.max(minDuration, Math.min(maxDuration, baseDuration * 1000));
+};
+
 const Wall = styled.div`
   display: flex;
   justify-content: center;
@@ -143,6 +164,32 @@ const ErrorText = styled.div`
   margin-top: -1rem;
 `;
 
+const RefreshingText = styled.div`
+  font-size: 6rem;
+  color: rgb(255, 255, 255);
+  font-family: "NYCTA-R46";
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding-left: 1.25rem;
+  margin-top: -1rem;
+  animation: pulse 2s ease-in-out infinite;
+
+  @keyframes pulse {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.25;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+`;
+
 const Text = styled.div`
   background-color: rgba(255, 255, 0, 1);
   display: inline-block;
@@ -198,15 +245,19 @@ function App() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [lines, setLines] = useState([]);
+  const [slides, setSlides] = useState([]);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
   const textContainerRef = useRef(null);
 
   useLayoutEffect(() => {
     const splitAndUpdateLines = () => {
       if (textContainerRef.current && headlines[currentIndex]) {
         const newLines = splitTextIntoLines(headlines[currentIndex].title);
-        setLines(newLines);
+        const newSlides = splitHeadlineIntoSlides(newLines);
+        setSlides(newSlides);
+        setCurrentSlideIndex(0); // Reset to first slide when headline changes
       }
     };
 
@@ -221,30 +272,59 @@ function App() {
 
   useEffect(() => {
     if (headlines.length > 0) {
+      const currentSlide = slides[currentSlideIndex] || [];
+      const slideDuration = calculateSlideDuration(currentSlide);
+
       const interval = setInterval(() => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % headlines.length);
-        setProgress(0); // Reset progress when switching headlines
-      }, 5000); // Change headline every 5 seconds
+        setCurrentIndex((prevIndex) => {
+          // If we have multiple slides for the current headline, advance to next slide
+          if (slides.length > 1 && currentSlideIndex < slides.length - 1) {
+            setCurrentSlideIndex((prevSlideIndex) => prevSlideIndex + 1);
+            setProgress(0); // Reset progress when switching slides
+            return prevIndex; // Stay on same headline
+          } else {
+            // Move to next headline and reset slide index
+            setCurrentSlideIndex(0);
+            setProgress(0); // Reset progress when switching headlines
+
+            const nextIndex = prevIndex + 1;
+
+            // If we've shown all headlines, fetch new ones
+            if (nextIndex >= headlines.length) {
+              setRefreshing(true);
+              fetchHeadlines().finally(() => {
+                setRefreshing(false);
+              });
+              return 0; // Reset to first headline
+            }
+
+            return nextIndex;
+          }
+        });
+      }, slideDuration);
 
       return () => clearInterval(interval);
     }
-  }, [headlines]);
+  }, [headlines, slides, currentSlideIndex]);
 
   // Progress bar effect
   useEffect(() => {
     if (headlines.length > 0 && !loading && !error) {
+      const currentSlide = slides[currentSlideIndex] || [];
+      const slideDuration = calculateSlideDuration(currentSlide);
+
       const progressInterval = setInterval(() => {
         setProgress((prevProgress) => {
           if (prevProgress >= 100) {
             return 0;
           }
-          return prevProgress + 100 / 50;
+          return prevProgress + 100 / (slideDuration / 100);
         });
       }, 100);
 
       return () => clearInterval(progressInterval);
     }
-  }, [headlines, currentIndex, loading, error]);
+  }, [headlines, currentIndex, currentSlideIndex, loading, error, slides]);
 
   const fetchHeadlines = async () => {
     try {
@@ -302,6 +382,9 @@ function App() {
       });
 
       setHeadlines(parsedHeadlines);
+      setCurrentIndex(0); // Reset to first headline
+      setCurrentSlideIndex(0); // Reset slide index
+      setProgress(0); // Reset progress
     } catch (err) {
       console.error("Error fetching headlines:", err);
       setError("Failed to load headlines");
@@ -326,28 +409,34 @@ function App() {
       (nowDate - publishedDateOnly) / (1000 * 60 * 60 * 24)
     );
 
+    // Always show time
+    const timeString = publishedDate.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true
+    });
+
+    // Get relative date
+    let relativeDate;
     if (diffInDays === 0) {
-      // Today - show time
-      const timeString = publishedDate.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true
-      });
-      return `Today at ${timeString}`;
+      relativeDate = "Today";
     } else if (diffInDays === 1) {
-      return "Yesterday";
+      relativeDate = "Yesterday";
     } else if (diffInDays < 7) {
-      return `${diffInDays} days ago`;
+      relativeDate = `${diffInDays} days ago`;
     } else if (diffInDays < 30) {
       const weeks = Math.floor(diffInDays / 7);
-      return `${weeks} week${weeks !== 1 ? "s" : ""} ago`;
+      relativeDate = `${weeks} week${weeks !== 1 ? "s" : ""} ago`;
     } else {
       const months = Math.floor(diffInDays / 30);
-      return `${months} month${months !== 1 ? "s" : ""} ago`;
+      relativeDate = `${months} month${months !== 1 ? "s" : ""} ago`;
     }
+
+    return `${relativeDate} at ${timeString}`;
   };
 
   const currentHeadline = headlines[currentIndex];
+  const currentSlide = slides[currentSlideIndex] || [];
 
   if (!currentHeadline) {
     return (
@@ -364,6 +453,8 @@ function App() {
   }
 
   const publishedTimeDate = getRelativeTimeString(currentHeadline.pubDate);
+  const slideNumber =
+    slides.length > 1 ? `${currentSlideIndex + 1}/${slides.length}` : null;
 
   return (
     <Wall>
@@ -374,16 +465,20 @@ function App() {
         >
           {loading && <LoadingText>Loading Headlines...</LoadingText>}
           {error && <ErrorText>{error}</ErrorText>}
-          {!loading && !error && currentHeadline && (
+          {refreshing && <RefreshingText>Refreshing</RefreshingText>}
+          {!loading && !error && !refreshing && currentHeadline && (
             <TextAndMetadata>
               <TitleWrapper>
-                {lines.slice(0, 4).map((line, index) => (
+                {currentSlide.map((line, index) => (
                   <Text key={index}>{line}</Text>
                 ))}
               </TitleWrapper>
               <br />
               <Metadata>
-                <Description>{publishedTimeDate}</Description>
+                <Description>
+                  {publishedTimeDate}
+                  {slideNumber && ` (${slideNumber})`}
+                </Description>
                 {!loading && !error && headlines.length > 0 && (
                   <ProgressBar>
                     <ProgressFill progress={progress} />
