@@ -1,8 +1,48 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import styled from "styled-components";
 
+// Function to normalize special characters to basic ASCII
+const normalizeText = (text) => {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+    .replace(/[éèêë]/g, "e")
+    .replace(/[àáâä]/g, "a")
+    .replace(/[ìíîï]/g, "i")
+    .replace(/[òóôö]/g, "o")
+    .replace(/[ùúûü]/g, "u")
+    .replace(/[ñ]/g, "n")
+    .replace(/[ç]/g, "c")
+    .replace(/[ýÿ]/g, "y")
+    .replace(/[š]/g, "s")
+    .replace(/[ž]/g, "z")
+    .replace(/[č]/g, "c")
+    .replace(/[ř]/g, "r")
+    .replace(/[ť]/g, "t")
+    .replace(/[ď]/g, "d")
+    .replace(/[ň]/g, "n")
+    .replace(/[ľ]/g, "l")
+    .replace(/[ĺ]/g, "l")
+    .replace(/[ŕ]/g, "r")
+    .replace(/[ó]/g, "o")
+    .replace(/[ú]/g, "u")
+    .replace(/[á]/g, "a")
+    .replace(/[í]/g, "i")
+    .replace(/[é]/g, "e")
+    .replace(/[ý]/g, "y")
+    .replace(/[ô]/g, "o")
+    .replace(/[ä]/g, "a")
+    .replace(/[ë]/g, "e")
+    .replace(/[ï]/g, "i")
+    .replace(/[ö]/g, "o")
+    .replace(/[ü]/g, "u")
+    .replace(/[ÿ]/g, "y");
+};
+
 const splitTextIntoLines = (text) => {
-  const words = text.split(" ");
+  // Normalize the text to remove special characters
+  const normalizedText = normalizeText(text);
+  const words = normalizedText.split(" ");
   let lines = [];
   let currentLine = [];
   let currentLineText = "";
@@ -162,32 +202,6 @@ const ErrorText = styled.div`
   height: 100%;
   padding-left: 1.25rem;
   margin-top: -1rem;
-`;
-
-const RefreshingText = styled.div`
-  font-size: 6rem;
-  color: rgb(255, 255, 255);
-  font-family: "NYCTA-R46";
-  text-align: center;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  padding-left: 1.25rem;
-  margin-top: -1rem;
-  animation: pulse 2s ease-in-out infinite;
-
-  @keyframes pulse {
-    0% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.25;
-    }
-    100% {
-      opacity: 1;
-    }
-  }
 `;
 
 const Text = styled.div`
@@ -462,9 +476,9 @@ function App() {
           ref={textContainerRef}
           className="text-container-for-measure"
         >
-          {loading && <LoadingText>Loading Headlines...</LoadingText>}
+          {loading && <LoadingText>Loading</LoadingText>}
           {error && <ErrorText>{error}</ErrorText>}
-          {refreshing && <RefreshingText>Refreshing</RefreshingText>}
+          {refreshing && <LoadingText>Refreshing</LoadingText>}
           {!loading && !error && !refreshing && currentHeadline && (
             <TextAndMetadata>
               <TitleWrapper>
