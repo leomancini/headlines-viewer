@@ -393,9 +393,9 @@ function App() {
     }
   };
 
-  const getRelativeTimeString = (dateString) => {
+  const getRelativeTimeString = (date) => {
     const now = new Date();
-    const publishedDate = new Date(dateString);
+    const publishedDate = new Date(date);
 
     // Reset time to start of day for date comparison
     const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -417,22 +417,21 @@ function App() {
     });
 
     // Get relative date
-    let relativeDate;
+    let dateString;
     if (diffInDays === 0) {
-      relativeDate = "Today";
+      dateString = "Today";
     } else if (diffInDays === 1) {
-      relativeDate = "Yesterday";
-    } else if (diffInDays < 7) {
-      relativeDate = `${diffInDays} days ago`;
-    } else if (diffInDays < 30) {
-      const weeks = Math.floor(diffInDays / 7);
-      relativeDate = `${weeks} week${weeks !== 1 ? "s" : ""} ago`;
+      dateString = "Yesterday";
     } else {
-      const months = Math.floor(diffInDays / 30);
-      relativeDate = `${months} month${months !== 1 ? "s" : ""} ago`;
+      // Show actual date format for older dates
+      dateString = publishedDate.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric"
+      });
     }
 
-    return `${relativeDate} at ${timeString}`;
+    return `${dateString} at ${timeString}`;
   };
 
   const currentHeadline = headlines[currentIndex];
