@@ -210,12 +210,8 @@ function App() {
       setLoading(true);
       setError(null);
 
-      // Use a CORS proxy to fetch the RSS feed
       const response = await fetch(
-        "https://whateverorigin.org/get?url=" +
-          encodeURIComponent(
-            "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
-          )
+        "https://headlines-server.noshado.ws/nytimes/homepage"
       );
 
       if (!response.ok) {
@@ -224,43 +220,11 @@ function App() {
 
       const data = await response.json();
 
-      if (!data.contents) {
-        throw new Error("No RSS content received");
+      if (!data.success || !data.headlines) {
+        throw new Error("No headlines received from API");
       }
 
-      // Parse the XML content
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(data.contents, "text/xml");
-
-      // Check for parsing errors
-      const parseError = xmlDoc.querySelector("parsererror");
-      if (parseError) {
-        throw new Error("Failed to parse RSS feed");
-      }
-
-      // Extract items from the RSS feed
-      const items = xmlDoc.querySelectorAll("item");
-      const parsedHeadlines = Array.from(items).map((item) => {
-        const title = item.querySelector("title")?.textContent || "";
-        const description =
-          item.querySelector("description")?.textContent || "";
-        const pubDate = item.querySelector("pubDate")?.textContent || "";
-        const link = item.querySelector("link")?.textContent || "";
-        const creator =
-          item.querySelector("dc\\:creator")?.textContent ||
-          item.querySelector("creator")?.textContent ||
-          "";
-
-        return {
-          title,
-          description,
-          pubDate,
-          link,
-          creator
-        };
-      });
-
-      setHeadlines(parsedHeadlines);
+      setHeadlines(data.headlines);
       setCurrentIndex(0); // Reset to first headline
       setCurrentSlideIndex(0); // Reset slide index
       setProgress(0); // Reset progress
