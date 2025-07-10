@@ -20,6 +20,7 @@ const scale = (value) => {
 const normalizeText = (text) => {
   return text
     .normalize("NFD")
+    .replace(/\$/g, "")
     .replace(/[’]/g, "'")
     .replace(/[“]/g, '"')
     .replace(/[”]/g, '"')
