@@ -21,6 +21,14 @@ const normalizeText = (text) => {
   return text
     .normalize("NFD")
     .replace(/[’]/g, "'")
+    .replace(/[“]/g, '"')
+    .replace(/[”]/g, '"')
+    .replace(/[‘]/g, "'")
+    .replace(/[’]/g, "'")
+    .replace(/[“]/g, '"')
+    .replace(/[”]/g, '"')
+    .replace(/[‘]/g, "'")
+    .replace(/[’]/g, "'")
     .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
     .replace(/[éèêë]/g, "e")
     .replace(/[àáâä]/g, "a")
