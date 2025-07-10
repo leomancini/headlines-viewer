@@ -15,6 +15,16 @@ const scale = (value) => {
 
 export const busTheme = {
   name: "bus",
+  textSettings: {
+    lineHeight: 1,
+    fontSize: 8,
+    letterSpacing: -0.5,
+    wordSpacing: 1,
+    fontFamily: '"MTA R211 Overhead", monospace',
+    padding: 2,
+    linesPerSlide: 4,
+    slideNumberFormat: "\u00A0>{current} of {total}"
+  },
   Container: styled.div`
     width: 100vw;
     height: 100vh;
@@ -25,7 +35,7 @@ export const busTheme = {
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background-color: #f5f5dc;
+    background-color: black;
   `,
 
   ScreenContainer: styled.div`
@@ -33,12 +43,6 @@ export const busTheme = {
     z-index: 0;
     width: calc(100% - ${scale(4)}rem);
     height: calc(100% - ${scale(4)}rem);
-    background: linear-gradient(to bottom, #8b4513, #654321);
-    margin: ${scale(2)}rem;
-    border-radius: ${scale(2)}rem;
-    box-shadow: inset 0 ${scale(1)}rem ${scale(3)}rem ${scale(0.5)}rem
-        rgba(0, 0, 0, 0.3),
-      0 ${scale(2)}rem ${scale(4)}rem rgba(0, 0, 0, 0.2);
   `,
 
   Screen: styled.div`
@@ -49,12 +53,7 @@ export const busTheme = {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: #fff8dc;
-    border-radius: ${scale(1)}rem;
-    box-shadow: inset 0 ${scale(1)}rem ${scale(2)}rem ${scale(0.25)}rem
-      rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    padding: ${scale(4)}rem;
+    background-color: #000;
   `,
 
   TextContainer: styled.div`
@@ -63,6 +62,7 @@ export const busTheme = {
     height: 100%;
     overflow: hidden;
     user-select: none;
+    position: relative;
   `,
 
   TextAndMetadata: styled.div`
@@ -71,24 +71,37 @@ export const busTheme = {
     justify-content: space-between;
     align-items: normal;
     height: 100%;
+    text-transform: uppercase;
   `,
 
   TitleWrapper: styled.div`
     overflow: hidden;
-    max-height: ${scale(43.5)}rem;
+    max-height: ${(props) => {
+      const settings = props.theme.textSettings;
+
+      const textHeight =
+        settings.fontSize * settings.lineHeight * settings.linesPerSlide;
+      const paddingHeight = settings.padding * 2 * settings.linesPerSlide;
+      const marginHeight =
+        settings.linesPerSlide > 1 ? (settings.linesPerSlide - 1) * 1 : 0;
+
+      return `${scale(textHeight + paddingHeight + marginHeight)}rem`;
+    }};
   `,
 
   LoadingText: styled.div`
-    font-size: ${scale(6)}rem;
-    color: #8b4513;
-    font-family: "Times New Roman", serif;
+    font-size: ${(props) => scale(props.theme.textSettings?.fontSize)}rem;
+    color: rgba(255, 255, 255, 0.25);
+    font-family: ${(props) => props.theme.textSettings?.fontFamily};
     text-align: center;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100%;
-    font-weight: bold;
+    font-weight: normal;
     animation: pulse 2s ease-in-out infinite;
+    text-transform: uppercase;
+    margin-top: ${scale(-0.75)}rem;
 
     @keyframes pulse {
       0% {
@@ -104,29 +117,32 @@ export const busTheme = {
   `,
 
   ErrorText: styled.div`
-    font-size: ${scale(3)}rem;
-    color: #8b4513;
-    font-family: "Times New Roman", serif;
+    font-size: ${(props) => scale(props.theme.textSettings?.fontSize * 0.4)}rem;
+    color: rgba(255, 255, 255, 0.25);
+    font-family: ${(props) => props.theme.textSettings?.fontFamily};
     text-align: center;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100%;
-    font-weight: bold;
+    font-weight: normal;
   `,
 
   Text: styled.div`
     background-color: transparent;
     display: inline-block;
-    font-size: ${scale(7)}rem;
-    letter-spacing: ${scale(-0.5)}rem;
-    word-spacing: ${scale(0.5)}rem;
-    color: #2f2f2f;
-    font-family: "Times New Roman", serif;
-    font-weight: bold;
-    padding: ${scale(2)}rem;
+    font-size: ${(props) => scale(props.theme.textSettings?.fontSize)}rem;
+    letter-spacing: ${(props) =>
+      scale(props.theme.textSettings?.letterSpacing)}rem;
+    word-spacing: ${(props) => scale(props.theme.textSettings?.wordSpacing)}rem;
+    color: rgba(255, 149, 0, 1);
+    font-family: ${(props) => props.theme.textSettings?.fontFamily};
+    font-weight: normal;
+    padding: ${(props) => scale(props.theme.textSettings?.padding)}rem 0;
     margin-bottom: ${scale(1)}rem;
-    line-height: 1.2;
+    line-height: ${(props) => props.theme.textSettings?.lineHeight};
+    text-transform: uppercase;
+    text-shadow: 0 0 100px rgba(255, 149, 0, 0.75);
 
     &:last-child {
       margin-bottom: 0;
@@ -138,16 +154,15 @@ export const busTheme = {
     justify-content: space-between;
     align-items: center;
     flex-direction: row;
-    padding: ${scale(1.5)}rem ${scale(2)}rem;
-    border-top: ${scale(0.25)}rem solid #8b4513;
   `,
 
   Description: styled.div`
-    font-size: ${scale(3)}rem;
-    letter-spacing: ${scale(0.1)}rem;
-    color: #8b4513;
-    font-family: "Times New Roman", serif;
-    font-style: italic;
+    font-size: ${(props) => scale(props.theme.textSettings?.fontSize * 0.4)}rem;
+    letter-spacing: ${(props) =>
+      scale(props.theme.textSettings?.letterSpacing * 0.2)}rem;
+    color: rgba(255, 149, 0, 0.5);
+    font-family: ${(props) => props.theme.textSettings?.fontFamily};
+    font-style: normal;
     display: inline-block;
     margin-top: ${scale(1)}rem;
   `,
@@ -155,17 +170,16 @@ export const busTheme = {
   ProgressBar: styled.div`
     width: ${scale(24)}rem;
     height: ${scale(3)}rem;
-    background-color: rgba(139, 69, 19, 0.2);
     overflow: hidden;
     margin-top: ${scale(1)}rem;
-    border: ${scale(0.1)}rem solid #8b4513;
+    border: ${scale(0.25)}rem solid rgba(255, 149, 0, 0.25);
   `,
 
   ProgressFill: styled.div`
-    height: calc(100% - ${scale(0.2)}rem);
-    background-color: #8b4513;
-    width: calc(${(props) => props.progress}% - ${scale(0.2)}rem);
+    height: calc(100% - ${scale(1)}rem);
+    background-color: rgba(255, 149, 0, 0.25);
+    width: calc(${(props) => props.progress}% - ${scale(1)}rem);
     transition: width 0.1s linear;
-    margin: ${scale(0.1)}rem;
+    margin: ${scale(0.5)}rem;
   `
 };

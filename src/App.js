@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
+import { ThemeProvider } from "styled-components";
 import { getCurrentTheme } from "./themes";
 
 // Function to get scale factor from URL parameter
@@ -19,6 +20,7 @@ const scale = (value) => {
 const normalizeText = (text) => {
   return text
     .normalize("NFD")
+    .replace(/[’]/g, "'")
     .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
     .replace(/[éèêë]/g, "e")
     .replace(/[àáâä]/g, "a")
@@ -53,7 +55,7 @@ const normalizeText = (text) => {
     .replace(/[ÿ]/g, "y");
 };
 
-const splitTextIntoLines = (text) => {
+const splitTextIntoLines = (text, theme) => {
   // Normalize the text to remove special characters
   const normalizedText = normalizeText(text);
   const words = normalizedText.split(" ");
@@ -62,14 +64,34 @@ const splitTextIntoLines = (text) => {
   let currentLineText = "";
   const textElement = document.createElement("span");
   textElement.className = "text-measure";
-  textElement.style.fontSize = `${scale(7)}rem`;
-  textElement.style.letterSpacing = `${scale(-1.25)}rem`;
-  textElement.style.wordSpacing = `${scale(-2.5)}rem`;
-  textElement.style.fontFamily = "NYCTA-R46";
+
+  // Use theme-specific font settings
+  if (theme.textSettings) {
+    textElement.style.fontSize = `${scale(theme.textSettings.fontSize)}rem`;
+    textElement.style.letterSpacing = `${scale(
+      theme.textSettings.letterSpacing
+    )}rem`;
+    textElement.style.wordSpacing = `${scale(
+      theme.textSettings.wordSpacing
+    )}rem`;
+    textElement.style.fontFamily = theme.textSettings.fontFamily;
+    textElement.style.padding = `${scale(theme.textSettings.padding)}rem`;
+    textElement.style.lineHeight = theme.textSettings.lineHeight;
+  } else {
+    // Default to subway/original theme settings
+    textElement.style.fontSize = `${scale(7)}rem`;
+    textElement.style.letterSpacing = `${scale(-1.25)}rem`;
+    textElement.style.wordSpacing = `${scale(-2.5)}rem`;
+    textElement.style.fontFamily = "NYCTA-R46";
+    textElement.style.padding = `0 ${scale(3)}rem ${scale(3)}rem ${scale(
+      3
+    )}rem`;
+    textElement.style.lineHeight = "1.2";
+  }
+
   textElement.style.textTransform = "uppercase";
   textElement.style.visibility = "hidden";
   textElement.style.position = "absolute";
-  textElement.style.padding = `0 ${scale(3)}rem ${scale(3)}rem ${scale(3)}rem`;
   document.body.appendChild(textElement);
   const containerWidth =
     document.querySelector(".text-container-for-measure")?.offsetWidth || 0;
@@ -94,9 +116,10 @@ const splitTextIntoLines = (text) => {
   return lines;
 };
 
-const splitHeadlineIntoSlides = (lines) => {
+const splitHeadlineIntoSlides = (lines, theme) => {
   const slides = [];
-  const linesPerSlide = 4;
+  // Use theme-specific lines per slide setting
+  const linesPerSlide = theme.textSettings?.linesPerSlide || 4;
 
   for (let i = 0; i < lines.length; i += linesPerSlide) {
     slides.push(lines.slice(i, i + linesPerSlide));
@@ -125,6 +148,7 @@ function App() {
   const [progress, setProgress] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const textContainerRef = useRef(null);
+  const currentSlideIndexRef = useRef(0);
   const location = useLocation();
 
   // Get current theme based on URL path
@@ -133,8 +157,11 @@ function App() {
   useLayoutEffect(() => {
     const splitAndUpdateLines = () => {
       if (textContainerRef.current && headlines[currentIndex]) {
-        const newLines = splitTextIntoLines(headlines[currentIndex].title);
-        const newSlides = splitHeadlineIntoSlides(newLines);
+        const newLines = splitTextIntoLines(
+          headlines[currentIndex].title,
+          theme
+        );
+        const newSlides = splitHeadlineIntoSlides(newLines, theme);
         setSlides(newSlides);
         setCurrentSlideIndex(0); // Reset to first slide when headline changes
       }
@@ -143,29 +170,35 @@ function App() {
     document.fonts.ready.then(() => {
       splitAndUpdateLines();
     });
-  }, [headlines, currentIndex]);
+  }, [headlines, currentIndex, theme]);
 
   useEffect(() => {
     fetchHeadlines();
   }, []);
 
+  // Update ref when slide index changes
   useEffect(() => {
-    if (headlines.length > 0) {
+    currentSlideIndexRef.current = currentSlideIndex;
+  }, [currentSlideIndex]);
+
+  useEffect(() => {
+    if (headlines.length > 0 && slides.length > 0) {
       const currentSlide = slides[currentSlideIndex] || [];
       const slideDuration = calculateSlideDuration(currentSlide);
 
       const interval = setInterval(() => {
-        setCurrentIndex((prevIndex) => {
-          // If we have multiple slides for the current headline, advance to next slide
-          if (slides.length > 1 && currentSlideIndex < slides.length - 1) {
-            setCurrentSlideIndex((prevSlideIndex) => prevSlideIndex + 1);
-            setProgress(0); // Reset progress when switching slides
-            return prevIndex; // Stay on same headline
-          } else {
-            // Move to next headline and reset slide index
-            setCurrentSlideIndex(0);
-            setProgress(0); // Reset progress when switching headlines
+        const currentSlideIdx = currentSlideIndexRef.current;
 
+        // If we have multiple slides for the current headline, advance to next slide
+        if (slides.length > 1 && currentSlideIdx < slides.length - 1) {
+          setCurrentSlideIndex(currentSlideIdx + 1);
+          setProgress(0); // Reset progress when switching slides
+        } else {
+          // Move to next headline and reset slide index
+          setCurrentSlideIndex(0);
+          setProgress(0); // Reset progress when switching headlines
+
+          setCurrentIndex((prevIndex) => {
             const nextIndex = prevIndex + 1;
 
             // If we've shown all headlines, fetch new ones
@@ -178,8 +211,8 @@ function App() {
             }
 
             return nextIndex;
-          }
-        });
+          });
+        }
       }, slideDuration);
 
       return () => clearInterval(interval);
@@ -188,7 +221,7 @@ function App() {
 
   // Progress bar effect
   useEffect(() => {
-    if (headlines.length > 0 && !loading && !error) {
+    if (headlines.length > 0 && !loading && !error && slides.length > 0) {
       const currentSlide = slides[currentSlideIndex] || [];
       const slideDuration = calculateSlideDuration(currentSlide);
 
@@ -282,61 +315,77 @@ function App() {
 
   if (!currentHeadline) {
     return (
-      <theme.Container>
-        <theme.Wall>
-          <theme.Screen>
-            <theme.TextContainer>
-              {loading && <theme.LoadingText>Loading</theme.LoadingText>}
-              {error && <theme.ErrorText>{error}</theme.ErrorText>}
-            </theme.TextContainer>
-          </theme.Screen>
-          <theme.ScreenContainer />
-        </theme.Wall>
-      </theme.Container>
+      <ThemeProvider theme={theme}>
+        <theme.Container>
+          <theme.Wall>
+            <theme.Screen>
+              <theme.TextContainer>
+                {loading && <theme.LoadingText>Loading</theme.LoadingText>}
+                {error && <theme.ErrorText>{error}</theme.ErrorText>}
+              </theme.TextContainer>
+            </theme.Screen>
+            <theme.ScreenContainer />
+          </theme.Wall>
+        </theme.Container>
+      </ThemeProvider>
     );
   }
 
   const publishedTimeDate = getRelativeTimeString(currentHeadline.pubDate);
-  const slideNumber =
-    slides.length > 1 ? `${currentSlideIndex + 1}/${slides.length}` : null;
+
+  // Generate slide number using theme-specific format
+  const getSlideNumber = () => {
+    if (slides.length <= 1) return null;
+
+    const format =
+      theme.textSettings?.slideNumberFormat || "({current}/{total})";
+    return format
+      .replace("{current}", currentSlideIndex + 1)
+      .replace("{total}", slides.length);
+  };
+
+  const slideNumber = getSlideNumber();
 
   return (
-    <theme.Container>
-      <theme.Wall>
-        <theme.Screen>
-          <theme.TextContainer
-            ref={textContainerRef}
-            className="text-container-for-measure"
-          >
-            {loading && <theme.LoadingText>Loading</theme.LoadingText>}
-            {error && <theme.ErrorText>{error}</theme.ErrorText>}
-            {refreshing && <theme.LoadingText>Refreshing</theme.LoadingText>}
-            {!loading && !error && !refreshing && currentHeadline && (
-              <theme.TextAndMetadata>
-                <theme.TitleWrapper>
-                  {currentSlide.map((line, index) => (
-                    <theme.Text key={index}>{line}</theme.Text>
-                  ))}
-                </theme.TitleWrapper>
-                <br />
-                <theme.Metadata>
-                  <theme.Description>
-                    {publishedTimeDate}
-                    {slideNumber && ` (${slideNumber})`}
-                  </theme.Description>
-                  {!loading && !error && headlines.length > 0 && (
-                    <theme.ProgressBar>
-                      <theme.ProgressFill progress={progress} />
-                    </theme.ProgressBar>
-                  )}
-                </theme.Metadata>
-              </theme.TextAndMetadata>
-            )}
-          </theme.TextContainer>
-        </theme.Screen>
-        <theme.ScreenContainer></theme.ScreenContainer>
-      </theme.Wall>
-    </theme.Container>
+    <ThemeProvider theme={theme}>
+      <theme.Container>
+        <theme.Wall>
+          <theme.Screen>
+            <theme.TextContainer
+              ref={textContainerRef}
+              className="text-container-for-measure"
+            >
+              {loading && <theme.LoadingText>Loading</theme.LoadingText>}
+              {error && <theme.ErrorText>{error}</theme.ErrorText>}
+              {refreshing && <theme.LoadingText>Refreshing</theme.LoadingText>}
+              {!loading && !error && !refreshing && currentHeadline && (
+                <theme.TextAndMetadata>
+                  <theme.TitleWrapper>
+                    {currentSlide.map((line, index) => (
+                      <theme.Text key={index}>{line}</theme.Text>
+                    ))}
+                  </theme.TitleWrapper>
+                  <br />
+                  <theme.Metadata>
+                    <theme.Description>
+                      {publishedTimeDate}
+                      {slideNumber && ` ${slideNumber}`}
+                    </theme.Description>
+                    {!loading && !error && headlines.length > 0 && (
+                      <theme.ProgressBar>
+                        <theme.ProgressFill progress={progress} />
+                      </theme.ProgressBar>
+                    )}
+                  </theme.Metadata>
+                </theme.TextAndMetadata>
+              )}
+              {theme.GridOverlay && <theme.GridOverlay />}
+            </theme.TextContainer>
+          </theme.Screen>
+          <theme.ScreenContainer></theme.ScreenContainer>
+        </theme.Wall>
+      </theme.Container>
+    </ThemeProvider>
   );
 }
 

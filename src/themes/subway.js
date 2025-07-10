@@ -15,6 +15,16 @@ const scale = (value) => {
 
 export const subwayTheme = {
   name: "subway",
+  textSettings: {
+    lineHeight: 1,
+    fontSize: 7,
+    letterSpacing: -1.25,
+    wordSpacing: -2.5,
+    fontFamily: "NYCTA-R46",
+    padding: 3,
+    linesPerSlide: 4,
+    slideNumberFormat: "\u00A0({current}/{total})"
+  },
   Container: styled.div`
     width: 100vw;
     height: 100vh;
@@ -89,16 +99,23 @@ export const subwayTheme = {
 
   TitleWrapper: styled.div`
     overflow: hidden;
-    /* 4 lines max height, calculated from: 4 * ${scale(
-      7.25
-    )}rem (font-size) * 1.5 (line-height) */
-    max-height: ${scale(43.5)}rem;
+    max-height: ${(props) => {
+      const settings = props.theme.textSettings;
+
+      const textHeight =
+        settings.fontSize * settings.lineHeight * settings.linesPerSlide;
+      const paddingHeight = settings.padding * 2 * settings.linesPerSlide;
+      const marginHeight =
+        settings.linesPerSlide > 1 ? (settings.linesPerSlide - 1) * 1 : 0;
+
+      return `${scale(textHeight + paddingHeight + marginHeight)}rem`;
+    }};
   `,
 
   LoadingText: styled.div`
-    font-size: ${scale(6)}rem;
+    font-size: ${(props) => scale(props.theme.textSettings?.fontSize)}rem;
     color: rgb(255, 255, 255);
-    font-family: "NYCTA-R46";
+    font-family: ${(props) => props.theme.textSettings?.fontFamily};
     text-align: center;
     display: flex;
     justify-content: center;
@@ -122,9 +139,9 @@ export const subwayTheme = {
   `,
 
   ErrorText: styled.div`
-    font-size: ${scale(3)}rem;
+    font-size: ${(props) => scale(props.theme.textSettings?.fontSize * 0.4)}rem;
     color: rgb(255, 255, 255);
-    font-family: "NYCTA-R46";
+    font-family: ${(props) => props.theme.textSettings?.fontFamily};
     text-align: center;
     display: flex;
     justify-content: center;
@@ -137,13 +154,15 @@ export const subwayTheme = {
   Text: styled.div`
     background-color: rgba(255, 255, 0, 1);
     display: inline-block;
-    font-size: ${scale(7)}rem;
-    letter-spacing: ${scale(-1.25)}rem;
-    word-spacing: ${scale(-2.5)}rem;
+    font-size: ${(props) => scale(props.theme.textSettings?.fontSize)}rem;
+    letter-spacing: ${(props) =>
+      scale(props.theme.textSettings?.letterSpacing)}rem;
+    word-spacing: ${(props) => scale(props.theme.textSettings?.wordSpacing)}rem;
     color: rgb(49, 44, 4);
-    font-family: "NYCTA-R46";
-    padding: ${scale(3)}rem;
-    margin-bottom: ${scale(-3)}rem;
+    font-family: ${(props) => props.theme.textSettings?.fontFamily};
+    padding: ${(props) => scale(props.theme.textSettings?.padding)}rem;
+    margin-bottom: ${(props) => scale(-props.theme.textSettings?.padding)}rem;
+    line-height: ${(props) => props.theme.textSettings?.lineHeight};
 
     &:last-child {
       margin-bottom: 0;
@@ -159,10 +178,11 @@ export const subwayTheme = {
   `,
 
   Description: styled.div`
-    font-size: ${scale(3)}rem;
-    letter-spacing: ${scale(-0.25)}rem;
+    font-size: ${(props) => scale(props.theme.textSettings?.fontSize * 0.4)}rem;
+    letter-spacing: ${(props) =>
+      scale(props.theme.textSettings?.letterSpacing * 0.2)}rem;
     color: rgb(255, 255, 255);
-    font-family: "NYCTA-R46";
+    font-family: ${(props) => props.theme.textSettings?.fontFamily};
     mix-blend-mode: overlay;
     display: inline-block;
     margin-top: ${scale(1)}rem;
